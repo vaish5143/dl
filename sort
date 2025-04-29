@@ -1,0 +1,143 @@
+[12:48 PM, 4/29/2025] Ravindra Kadam: #include <iostream>
+#include <omp.h>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+void merge(vector<int>& arr, int left, int mid, int right) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    vector<int> leftArr(n1);
+    vector<int> rightArr(n2);
+
+    for (int i = 0; i < n1; ++i)
+        leftArr[i] = arr[left + i];
+    for (int i = 0; i < n2; ++i)
+        rightArr[i] = arr[mid + 1 + i];
+
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2) {
+        if (leftArr[i] <= rightArr[j]) {
+            arr[k] = leftArr[i];
+            ++i;
+        } else {
+            arr[k] = rightArr[j];
+            ++j;
+        }
+        ++k;
+    }
+
+    while (i < n1) {
+        arr[k] = leftArr[i];
+        ++i;
+        ++k;
+    }
+
+    while (j < n2) {
+        arr[k] = rightArr[j];
+        ++j;
+        ++k;
+    }
+}
+
+void parallelMergeSort(vector<int>& arr, int left, int right) {
+    if (left >= right) {
+        return;
+    }
+
+    int mid = left + (right - left) / 2;
+
+    // Parallelize the recursive calls using OpenMP
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        parallelMergeSort(arr, left, mid);
+
+        #pragma omp section
+        parallelMergeSort(arr, mid + 1, right);
+    }
+
+    merge(arr, left, mid, right);
+}
+
+int main() {
+    int n = 100000;  // Size of the array
+    vector<int> arr(n);
+
+    // Initialize random number generator
+    srand(time(0));
+
+    // Generate random array
+    for (int i = 0; i < n; ++i) {
+        arr[i] = rand() % 1000;
+    }
+
+    // Measure start time
+    double start_time = omp_get_wtime();
+    
+    parallelMergeSort(arr, 0, n - 1);  // Sort the array using Parallel Merge Sort
+    
+    // Measure end time
+    double end_time = omp_get_wtime();
+    
+    cout << "Parallel Merge Sort took " << (end_time - start_time) << " seconds.\n";
+
+    return 0;
+}
+[12:48 PM, 4/29/2025] Ravindra Kadam: #include <iostream>
+#include <omp.h>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+void parallelBubbleSort(vector<int>& arr) {
+    int n = arr.size();
+    bool swapped = true;
+    
+    // Parallelize the outer loop using OpenMP
+    #pragma omp parallel
+    {
+        while (swapped) {
+            swapped = false;
+            // Parallelize the inner loop using OpenMP for each iteration
+            #pragma omp for
+            for (int i = 0; i < n - 1; ++i) {
+                if (arr[i] > arr[i + 1]) {
+                    swap(arr[i], arr[i + 1]);
+                    swapped = true;
+                }
+            }
+            #pragma omp barrier  // Synchronize threads after each pass
+        }
+    }
+}
+
+int main() {
+    int n = 100000;  // Size of the array
+    vector<int> arr(n);
+
+    // Initialize random number generator
+    srand(time(0));
+
+    // Generate random array
+    for (int i = 0; i < n; ++i) {
+        arr[i] = rand() % 1000;
+    }
+
+    // Measure start time
+    double start_time = omp_get_wtime();
+    
+    parallelBubbleSort(arr);  // Sort the array using Parallel Bubble Sort
+    
+    // Measure end time
+    double end_time = omp_get_wtime();
+    
+    cout << "Parallel Bubble Sort took " << (end_time - start_time) << " seconds.\n";
+
+    return 0;
+}
